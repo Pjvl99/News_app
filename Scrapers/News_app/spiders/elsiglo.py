@@ -4,7 +4,7 @@ from datetime import datetime
 import os
 class ElSigloSpider(scrapy.Spider):
     name = "elsiglo"
-    start_urls = ["https://elsiglo.com.gt/pulso-economico/page/2/"]
+    start_urls = ["https://elsiglo.com.gt/"]
 
     def parse(self, response):
         try:

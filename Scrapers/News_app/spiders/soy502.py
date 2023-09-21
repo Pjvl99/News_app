@@ -3,7 +3,7 @@ from loguru import logger
 import os
 class Soy502Spider(scrapy.Spider):
     name = 'soy502'
-    start_urls = ["https://www.soy502.com/articulo/puede-no-hacer-elecciones-2023-101477"]
+    start_urls = ["https://www.soy502.com/"]
 
     def parse(self, response):
         try:
