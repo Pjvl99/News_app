@@ -128,9 +128,9 @@ class RepublicaGTSpider(scrapy.Spider):
             logger.error(str(e))
  
     def check_dates(self, date):
-        date1 = datetime.strptime(self.date, "Y-%m-%d").date()
-        date2 = datetime.strptime(date, "Y-%m-%d").date()
-        original_date = datetime.strptime(self.original_date, "Y-%m-%d").date()
+        date1 = datetime.strptime(self.date, "%Y-%m-%d").date()
+        date2 = datetime.strptime(date, "%Y-%m-%d").date()
+        original_date = datetime.strptime(self.original_date, "%Y-%m-%d").date()
         if date2 > date1:
             self.date = str(date2)
         return date2 > original_date
