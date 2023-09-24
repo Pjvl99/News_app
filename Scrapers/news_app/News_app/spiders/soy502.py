@@ -1,10 +1,20 @@
 import scrapy
 from loguru import logger
 import os
+from datetime import datetime
 class Soy502Spider(scrapy.Spider):
     name = 'soy502'
     start_urls = ["https://www.soy502.com/"]
-
+    with open('variables.txt', 'r') as file:
+        lines = file.readlines()
+        file.close()
+    variable_splitted = lines[0].split('=')
+    if len(variable_splitted) > 1:
+        date = variable_splitted[0].strip()
+        original_date = variable_splitted[0].strip()
+    else:
+        date = "1899-01-01"
+        original_date = "1899-01-01"
     def parse(self, response):
         try:
             fileDir = os.path.dirname(os.path.abspath(__file__))
@@ -64,13 +74,15 @@ class Soy502Spider(scrapy.Spider):
     def extract_news(self, response):
         try:
             if response.status == 200:
+                content = response.css('.content')
+                date = content.css('.date::text').get(default="1999-01-01")
+                if not self.check_dates(date):
+                    return
                 items = response.css("li[class^='subsection subsection'] div > a").getall()
                 sub_category = "not-found"
                 if items:
                     sub_category = str(items[-1:]).split('>')[1].split('<')[0]
-                content = response.css('.content')
                 title = content.css('section > h1::text').get(default="not-found")
-                date = content.css('.date::text').get(default="01/01/2023")
                 author = content.css('.autor li::text').get().replace("Por ", "")
                 date = self.convert_date(date_string=str(date))
                 all_description_tags = content.css("div[class^='body tvads'] h2, h3, p")
@@ -95,6 +107,14 @@ class Soy502Spider(scrapy.Spider):
                 logger.info("Error loading page:", response.url)
         except Exception as e:
             logger.error(str(e))
+            
+    def check_dates(self, date):
+        date1 = datetime.strptime(self.date, "Y-%m-%d").date()
+        date2 = datetime.strptime(date, "Y-%m-%d").date()
+        original_date = datetime.strptime(self.original_date, "Y-%m-%d").date()
+        if date2 > date1:
+            self.date = str(date2)
+        return date2 > original_date
 
     def convert_date(self, date_string):
         try:
@@ -119,3 +139,9 @@ class Soy502Spider(scrapy.Spider):
         except Exception as e:
             logger.error(str(e))
             return None
+        
+    def closed(self, reason):
+        self.lines[0] = f'SOY502={self.date}\n'
+        with open('variables.txt', 'w') as file:
+            file.writelines(self.lines)
+            file.close()

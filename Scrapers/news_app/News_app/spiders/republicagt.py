@@ -1,10 +1,20 @@
 import scrapy
 from loguru import logger
+from datetime import datetime
 import os
 class RepublicaGTSpider(scrapy.Spider):
     name = 'republicagt'
     start_urls = ["https://republica.gt/"]
-
+    with open('variables.txt', 'r') as file:
+        lines = file.readlines()
+        file.close()
+    variable_splitted = lines[1].split('=')
+    if len(variable_splitted) > 1:
+        date = variable_splitted[1].strip()
+        original_date = variable_splitted[1].strip()
+    else:
+        date = "1899-01-01"
+        original_date = "1899-01-01"
     def parse(self, response):
         try:
             fileDir = os.path.dirname(os.path.abspath(__file__))
@@ -66,6 +76,12 @@ class RepublicaGTSpider(scrapy.Spider):
     def extract_news_item(self, response):
         try:
             if response.status == 200:
+                try:
+                    date = response.xpath("/html/head/meta[30]/@content")[0].extract()
+                except:
+                    date = "1999-01-01"
+                if not self.check_dates(date):
+                    return
                 sub_category = response.css("span[class^='nota__volanta']::text").get(default="not-found")
                 if not sub_category:
                     sub_category = "Especial"
@@ -89,7 +105,6 @@ class RepublicaGTSpider(scrapy.Spider):
                         if counter == 2:
                             image_url = image.xpath("@src").get(default="not-found")
                             break
-                date = response.xpath("/html/head/meta[30]/@content")[0].extract()
                 author = response.xpath("/html/head/meta[28]/@content")[0].extract()
                 article_body = response.css(".articulo__cuerpo")
                 description = ""
@@ -112,3 +127,16 @@ class RepublicaGTSpider(scrapy.Spider):
         except Exception as e:
             logger.error(str(e))
  
+    def check_dates(self, date):
+        date1 = datetime.strptime(self.date, "Y-%m-%d").date()
+        date2 = datetime.strptime(date, "Y-%m-%d").date()
+        original_date = datetime.strptime(self.original_date, "Y-%m-%d").date()
+        if date2 > date1:
+            self.date = str(date2)
+        return date2 > original_date
+    
+    def closed(self, reason):
+        self.lines[1] = f'REPUBLICAGT={self.date}\n'
+        with open('variables.txt', 'w') as file:
+            file.writelines(self.lines)
+            file.close()

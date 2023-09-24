@@ -5,7 +5,17 @@ import os
 class ElSigloSpider(scrapy.Spider):
     name = "elsiglo"
     start_urls = ["https://elsiglo.com.gt/"]
-
+    with open('variables.txt', 'r') as file:
+        lines = file.readlines()
+        file.close()
+    variable_splitted = lines[2].split('=')
+    if len(variable_splitted) > 1:
+        date = variable_splitted[2].strip()
+        original_date = variable_splitted[2].strip()
+    else:
+        date = "1899-01-01"
+        original_date = "1899-01-01"
+    
     def parse(self, response):
         try:
             fileDir = os.path.dirname(os.path.abspath(__file__))
@@ -38,6 +48,9 @@ class ElSigloSpider(scrapy.Spider):
                     post_url = post.css(".cm-featured-image > a").xpath("@href").get()
                     title = post.css(".cm-entry-title > a").xpath("@title").get(default="not-found")
                     datetime_data = post.css("time[class^='entry-date published']").xpath("@datetime").get(default="1999-01-01T07:40:01-06:00")
+                    datetime_object = datetime.fromisoformat(datetime_data)
+                    if not self.check_dates(datetime_object):
+                        break
                     author = post.css("a[class^='url fn n']").xpath("@title").get(default="not-found")
                     tags = post.css(".cm-post-categories")
                     subcategory = ""
@@ -45,7 +58,6 @@ class ElSigloSpider(scrapy.Spider):
                         subcategory = tag.css("a::text").get()
                         break
                     if post_url:
-                        datetime_object = datetime.fromisoformat(datetime_data)
                         meta = {
                             "category": response.meta["category"],
                             "img_url": img_url,
@@ -63,6 +75,14 @@ class ElSigloSpider(scrapy.Spider):
                 logger.error("Error in connection:", response.url)
         except Exception as e:
             logger.error(str(e))
+    
+    def check_dates(self, datetime_object):
+        date1 = datetime.strptime(self.date, "Y-%m-%d").date()
+        date2 = datetime_object.date()
+        original_date = datetime.strptime(self.original_date, "Y-%m-%d").date()
+        if date2 > date1:
+            self.date = str(date2)
+        return date2 > original_date
 
     def get_description(self, response):
         try:
@@ -85,4 +105,10 @@ class ElSigloSpider(scrapy.Spider):
                 logger.error("Error in connection:", response.url)
         except Exception as e:
             logger.error(str(e))
+
+    def closed(self, reason):
+        self.lines[2] = f'ELSIGLO={self.date}\n'
+        with open('variables.txt', 'w') as file:
+            file.writelines(self.lines)
+            file.close()
         
