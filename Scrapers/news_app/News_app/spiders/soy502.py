@@ -76,6 +76,7 @@ class Soy502Spider(scrapy.Spider):
             if response.status == 200:
                 content = response.css('.content')
                 date = content.css('.date::text').get(default="1999-01-01")
+                date = self.convert_date(date_string=str(date))
                 if not self.check_dates(date):
                     return
                 items = response.css("li[class^='subsection subsection'] div > a").getall()
@@ -84,7 +85,6 @@ class Soy502Spider(scrapy.Spider):
                     sub_category = str(items[-1:]).split('>')[1].split('<')[0]
                 title = content.css('section > h1::text').get(default="not-found")
                 author = content.css('.autor li::text').get().replace("Por ", "")
-                date = self.convert_date(date_string=str(date))
                 all_description_tags = content.css("div[class^='body tvads'] h2, h3, p")
                 photo = str(content.css(".first-element div > img").xpath("@src").get(default="not-found"))
                 is_link_valid = photo[:2]
