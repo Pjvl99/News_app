@@ -9,9 +9,9 @@ class RepublicaGTSpider(scrapy.Spider):
         lines = file.readlines()
         file.close()
     first_date = lines[1].split('=')[1]
-    if len(first_date) > 0:
-        date = first_date
-        original_date = first_date
+    if len(first_date) > 1:
+        date = first_date.strip()
+        original_date = first_date.strip()
     else:
         date = "1899-01-01"
         original_date = "1899-01-01"
