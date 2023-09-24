@@ -76,7 +76,8 @@ class Soy502Spider(scrapy.Spider):
             if response.status == 200:
                 content = response.css('.content')
                 date = content.css('.date::text').get(default="1999-01-01")
-                date = self.convert_date(date_string=str(date))
+                if date != "1999-01-01":
+                    date = self.convert_date(date_string=str(date))
                 if not self.check_dates(date):
                     return
                 items = response.css("li[class^='subsection subsection'] div > a").getall()
@@ -138,7 +139,7 @@ class Soy502Spider(scrapy.Spider):
             return translated_date_string
         except Exception as e:
             logger.error(str(e))
-            return None
+            return "1999-01-01"
         
     def closed(self, reason):
         self.lines[0] = f'SOY502={self.date}\n'
