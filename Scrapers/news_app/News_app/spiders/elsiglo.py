@@ -8,10 +8,10 @@ class ElSigloSpider(scrapy.Spider):
     with open('variables.txt', 'r') as file:
         lines = file.readlines()
         file.close()
-    variable_splitted = lines[2].split('=')
-    if len(variable_splitted) > 1:
-        date = variable_splitted[2].strip()
-        original_date = variable_splitted[2].strip()
+    first_date = lines[2].split('=')[1]
+    if len(first_date) > 0:
+        date = first_date
+        original_date = first_date
     else:
         date = "1899-01-01"
         original_date = "1899-01-01"
